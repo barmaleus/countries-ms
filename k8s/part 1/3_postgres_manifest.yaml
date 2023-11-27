@@ -1,0 +1,83 @@
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-statefulset
+  namespace: k8s-program
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: postgres-db
+  ports:
+    - protocol: "TCP"
+      name: postgresql
+      port: 5432
+      targetPort: postgresql
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: k8s-program
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: postgres-db
+  ports:
+    - protocol: "TCP"
+      name: postgresql
+      port: 5432
+      targetPort: postgresql
+
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: k8s-program
+spec:
+  selector:
+    matchLabels:
+      app: postgres-db
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: postgres-db
+        owner: alehrekuts
+    spec:
+      containers:
+        - name: postgres
+          image: bitnami/postgresql:16.1.0
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRESQL_PASSWORD
+              value: "12345678"
+            - name: POSTGRES_DB
+              value: countriesdb
+            - name: POSTGRES_USER
+              value: countriesuser
+            - name: ALLOW_EMPTY_PASSWORD
+              value: "yes"
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /data/pgdata
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+
+# Task 4: Stateful Sets
+#
+#  Use StatefulSet object (not Deployment) to create databases.
+#  Configure default storage class "hostpath" for volume claim templates, so allowing k8s to provision storage with default provisioner (PersistentVolume will be created automatically).
+#  Create 2 Services (one for each StatefulSet of your system). Use ClusterIP service type to restrict external access.
+#
+#Note: You can also use kubectl port-forward pod-name 5433:5432 (local machine port:container port) console command to temporarily open access to the database pod
