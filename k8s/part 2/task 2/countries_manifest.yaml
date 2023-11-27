@@ -56,7 +56,7 @@ spec:
     spec:
       containers:
         - name: countries-service
-          image: barmaleus/countries-service:1.2.0
+          image: barmaleus/countries-service:1.3.0
           ports:
             - containerPort: 8000
           env:
@@ -70,6 +70,11 @@ spec:
                 configMapKeyRef:
                   name: countries-configmap
                   key: server_port
+            - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: countries-configmap
+                  key: management_endpoint_health_probes_enabled
             - name: SPRING_JPA_SHOWSQL
               valueFrom:
                 configMapKeyRef:
@@ -105,6 +110,24 @@ spec:
                 secretKeyRef:
                   name: db-credentials
                   key: SPRING_DATASOURCE_PASSWORD
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8000
+            failureThreshold: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8000
+            failureThreshold: 1
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8000
+            failureThreshold: 1
+            periodSeconds: 5
 
 ---
 
@@ -126,7 +149,7 @@ spec:
     spec:
       containers:
         - name: capitals-service
-          image: barmaleus/capitals-service:1.1.0
+          image: barmaleus/capitals-service:1.2.0
           ports:
             - containerPort: 8100
           env:
@@ -140,6 +163,11 @@ spec:
                 configMapKeyRef:
                   name: capitals-configmap
                   key: server_port
+            - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: capitals-configmap
+                  key: management_endpoint_health_probes_enabled
             - name: COUNTRIESSERVICE_PORT
               valueFrom:
                 configMapKeyRef:
@@ -150,3 +178,21 @@ spec:
                 configMapKeyRef:
                   name: capitals-configmap
                   key: node_ip
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8100
+            failureThreshold: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8100
+            failureThreshold: 1
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8100
+            failureThreshold: 1
+            periodSeconds: 5
