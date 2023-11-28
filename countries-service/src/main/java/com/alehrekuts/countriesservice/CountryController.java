@@ -28,6 +28,7 @@ public class CountryController {
         Country countryBean = countryRepository.findById(code).orElseThrow(() -> new NotFoundException(format("Country with code \"%s\" is not found", code)));
         int port = Integer.parseInt(Optional.ofNullable(environment.getProperty("local.server.port")).orElse("0"));
         countryBean.setPort(port);
+        countryBean.setPopulation("undefined");
         int time = timePort.getOrDefault(port, 0);
         if (time >= 0) {
             try {

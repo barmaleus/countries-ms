@@ -36,5 +36,8 @@ public class Country {
     private String capital;
 
     @Transient
+    private String population;
+
+    @Transient
     int port;
 }

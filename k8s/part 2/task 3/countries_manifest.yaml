@@ -1,0 +1,208 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: k8s-program
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: countries-service
+  namespace: k8s-program
+spec:
+  type: NodePort
+  selector:
+    app: countries-service-pod
+  ports:
+    - protocol: "TCP"
+      port: 8000
+      targetPort: 8000
+      nodePort: 32000
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: capitals-service
+  namespace: k8s-program
+spec:
+  type: NodePort
+  selector:
+    app: capitals-service-pod
+  ports:
+    - protocol: "TCP"
+      port: 8100
+      nodePort: 32100
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: countries-service-app
+  namespace: k8s-program
+spec:
+  selector:
+    matchLabels:
+      app: countries-service-pod
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: countries-service-pod
+        owner: alehrekuts
+    spec:
+      containers:
+        - name: countries-service
+          image: barmaleus/countries-service:1.4.0
+          ports:
+            - containerPort: 8000
+          env:
+            - name: SPRING_APPLICATION_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: countries-configmap
+                  key: spring_application_name
+            - name: SERVER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: countries-configmap
+                  key: server_port
+            - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: countries-configmap
+                  key: management_endpoint_health_probes_enabled
+            - name: SPRING_JPA_SHOWSQL
+              valueFrom:
+                configMapKeyRef:
+                  name: countries-configmap
+                  key: spring_jpa_showsql
+            - name: SPRING_JPA_HIBERNATE_DDLAUTO
+              valueFrom:
+                configMapKeyRef:
+                  name: countries-configmap
+                  key: spring_jpa_hibernate_ddlauto
+            - name: SPRING_SQL_INIT_MODE
+              valueFrom:
+                configMapKeyRef:
+                  name: countries-configmap
+                  key: spring_sql_init_mode
+            - name: SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
+              valueFrom:
+                configMapKeyRef:
+                  name: countries-configmap
+                  key: spring_jpa_properties_hibernate_dialect
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: countries-configmap
+                  key: spring_datasource_url
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: SPRING_DATASOURCE_USERNAME
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: SPRING_DATASOURCE_PASSWORD
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8000
+            failureThreshold: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8000
+            failureThreshold: 1
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8000
+            failureThreshold: 1
+            periodSeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: capitals-service-app
+  namespace: k8s-program
+spec:
+  selector:
+    matchLabels:
+      app: capitals-service-pod
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: capitals-service-pod
+        owner: alehrekuts
+    spec:
+      containers:
+        - name: capitals-service
+          image: barmaleus/capitals-service:1.2.0
+          ports:
+            - containerPort: 8100
+          env:
+            - name: SPRING_APPLICATION_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: capitals-configmap
+                  key: spring_application_name
+            - name: SERVER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: capitals-configmap
+                  key: server_port
+            - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: capitals-configmap
+                  key: management_endpoint_health_probes_enabled
+            - name: COUNTRIESSERVICE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: capitals-configmap
+                  key: countriesservice_port
+            - name: NODE_IP
+              valueFrom:
+                configMapKeyRef:
+                  name: capitals-configmap
+                  key: node_ip
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8100
+            failureThreshold: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8100
+            failureThreshold: 1
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8100
+            failureThreshold: 1
+            periodSeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
