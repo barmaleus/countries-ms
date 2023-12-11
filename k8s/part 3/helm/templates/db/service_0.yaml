@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-statefulset
+  namespace: {{ .Values.nameSpace }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: postgres-db
+  ports:
+    - protocol: "TCP"
+      name: postgresql
+      port: 5432
+      targetPort: postgresql
