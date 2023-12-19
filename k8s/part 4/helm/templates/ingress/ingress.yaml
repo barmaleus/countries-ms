@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  name: countries-app
+  labels:
+    name: countries-app
+
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: localhost
+      http:
+        paths:
+          - path: /countries(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: countries-service
+                port:
+                  number: 80
+          - path: /capitals(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: capitals-service
+                port:
+                  number: 80

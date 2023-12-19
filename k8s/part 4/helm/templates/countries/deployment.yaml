@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: countries-service-app
+  namespace: {{ .Values.nameSpace }}
+spec:
+  selector:
+    matchLabels:
+      app: countries-service-pod
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: countries-service-pod
+        owner: alehrekuts
+    spec:
+      containers:
+        - name: countries-service
+          image: barmaleus/countries-service:1.4.0
+          ports:
+            - containerPort: 80
+          env:
+            - name: SPRING_APPLICATION_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: countries-configmap
+                  key: spring_application_name
+            - name: SERVER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: countries-configmap
+                  key: server_port
+            - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: countries-configmap
+                  key: management_endpoint_health_probes_enabled
+            - name: SPRING_JPA_SHOWSQL
+              valueFrom:
+                configMapKeyRef:
+                  name: countries-configmap
+                  key: spring_jpa_showsql
+            - name: SPRING_JPA_HIBERNATE_DDLAUTO
+              valueFrom:
+                configMapKeyRef:
+                  name: countries-configmap
+                  key: spring_jpa_hibernate_ddlauto
+            - name: SPRING_SQL_INIT_MODE
+              valueFrom:
+                configMapKeyRef:
+                  name: countries-configmap
+                  key: spring_sql_init_mode
+            - name: SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
+              valueFrom:
+                configMapKeyRef:
+                  name: countries-configmap
+                  key: spring_jpa_properties_hibernate_dialect
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: countries-configmap
+                  key: spring_datasource_url
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: SPRING_DATASOURCE_USERNAME
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: SPRING_DATASOURCE_PASSWORD
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 80
+            failureThreshold: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 80
+            failureThreshold: 1
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 80
+            failureThreshold: 1
+            periodSeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1

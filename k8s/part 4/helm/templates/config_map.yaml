@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: countries-configmap
+  namespace: {{ .Values.nameSpace }}
+  {{- include "countries-app.labels" . | nindent 2 }}
+data:
+  # property-like keys; each key maps to a simple value
+  spring_application_name: "countries-service"
+  server_port: "80"
+  spring_jpa_showsql: "true"
+  spring_jpa_hibernate_ddlauto: "none"
+  spring_sql_init_mode: "always"
+  spring_jpa_properties_hibernate_dialect: "org.hibernate.dialect.PostgreSQLDialect"
+  spring_datasource_url: "jdbc:postgresql://postgres-statefulset:5432/countriesdb"
+  management_endpoint_health_probes_enabled: "true"
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: capitals-configmap
+  namespace: {{ .Values.nameSpace }}
+  {{- include "countries-app.labels" . | nindent 2 }}
+data:
+  # property-like keys; each key maps to a simple value
+  spring_application_name: "capitals-service"
+  server_port: "80"
+  countriesservice_port: "80"
+  node_ip: "10.105.220.52"
+  management_endpoint_health_probes_enabled: "true"
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-configmap
+  namespace: {{ .Values.nameSpace }}
+  {{- include "countries-app.labels" . | nindent 2 }}
+data:
+  # property-like keys; each key maps to a simple value
+  allow_empty_password: "yes"
+  postgres_db: "countriesdb"
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sql-configmap
+  namespace: {{ .Values.nameSpace }}
+  {{- include "countries-app.labels" . | nindent 2 }}
+data:
+  # file-like keys
+  create-db.sql: |
+    CREATE TABLE IF NOT EXISTS COUNTRY (
+      CODE VARCHAR(2) NOT NULL,
+      NAME VARCHAR(100) NULL,
+      CURRENCY VARCHAR(100) NULL,
+      CURRENCY_SYMBOL VARCHAR(100) NULL,
+      LANGUAGE VARCHAR(100) NULL,
+      CAPITAL VARCHAR(100) NULL,
+      CONSTRAINT CODE_PK PRIMARY KEY (CODE)
+    );
+  data.sql: |
+    insert into country (code,name,currency,currency_symbol,language,capital)
+      values('es','Spain','Euro','€','es-ES','Madrid');
+    insert into country (code,name,currency,currency_symbol,language,capital)
+      values('en','Great Britain','British Pound','£','en-EN','London');
+    insert into country (code,name,currency,currency_symbol,language,capital)
+      values('us','United States','Dollar','$','en-US','Washington');
